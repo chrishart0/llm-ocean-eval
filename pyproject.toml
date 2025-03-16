@@ -1,0 +1,24 @@
+[project]
+name = "llm-ocean-eval"
+version = "0.1.0"
+description = "Big 5 OCEAN LLM eval"
+authors = [
+    {name = "chrishart0",email = "64378248+chrishart0@users.noreply.github.com"}
+]
+license = {text = "MIT"}
+readme = "README.md"
+requires-python = "<4.0,>=3.9"
+dependencies = [
+    "langchain-openai (>=0.3.8,<0.4.0)",
+    "langchain (>=0.3.20,<0.4.0)",
+    "langchain-ollama (>=0.2.3,<0.3.0)",
+    "pandas (>=2.2.3,<3.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+package-mode = false
