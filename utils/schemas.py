@@ -17,11 +17,17 @@ class PersonalityResponse(BaseModel):
         }
     )
 
+class ErrorResponse(BaseModel):
+    """Response for cases where model evaluation failed."""
+    error: str = Field(description="Error message explaining what went wrong")
+    default_score: Optional[int] = Field(description="Default score used (if any)", default=None)
+
 class ModelEvaluation(BaseModel):
     """Results from evaluating a single model."""
     model_name: str = Field(description="Name of the LLM model")
     model_version: str = Field(description="Version/API info of the model")
     responses: List[PersonalityResponse] = Field(description="List of responses to personality questions")
+    errors: List[ErrorResponse] = Field(description="List of errors encountered", default_factory=list)
     timestamp: datetime = Field(default_factory=datetime.now, description="When the evaluation was conducted")
 
     def model_dump(self, **kwargs):

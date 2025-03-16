@@ -1,0 +1,21 @@
+gpt-4o-mini:
+  name: GPT-4o-mini
+  version: OpenAI API, gpt-4o-mini
+  class: langchain_openai.ChatOpenAI
+  params:
+    model: gpt-4o-mini
+    temperature: 0
+    max_tokens: 1024
+    timeout: 60
+    streaming: false
+
+gpt-4o:
+  name: GPT-4o
+  version: OpenAI API, gpt-4o-2023-11-06
+  class: langchain_openai.ChatOpenAI
+  params:
+    model: gpt-4o
+    temperature: 0
+    max_tokens: 2048
+    timeout: 90
+    streaming: false

@@ -1,0 +1,5 @@
+name: Personality Traits Evaluation
+description: Run the Big Five personality test on multiple models
+models:
+  - openai:gpt-4o-mini
+  - anthropic:claude-3-sonnet 

@@ -1,0 +1,16 @@
+name: Comprehensive Model Evaluation
+description: Evaluate multiple models across multiple dimensions
+models:
+  - openai:gpt-4o
+  - openai:gpt-4o-mini
+  - anthropic:claude-3-opus
+  - anthropic:claude-3-sonnet
+  - xai:grok-beta
+tags:
+  - personality
+  - reasoning
+  - ethics
+parameters:
+  max_questions_per_batch: 10
+  retry_failed: true
+  save_intermediate_results: true 

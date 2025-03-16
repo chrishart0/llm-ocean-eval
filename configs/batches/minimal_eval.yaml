@@ -1,0 +1,10 @@
+name: Minimal Evaluation Suite
+description: Lightweight evaluation with minimal resource usage
+models:
+  - openai:gpt-4o-mini
+parameters:
+  max_questions_per_batch: 5
+  retry_failed: false
+  timeout_multiplier: 0.5
+  structured_output_method: "function_calling"
+  default_error_score: 1 
