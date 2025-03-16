@@ -21,4 +21,10 @@ Install dependencies:
 poetry install
 ```
 
-
+## Research Notes
+* Problem: 4o-mini refuses to answer questions that sound like they're testing for personality.
+  * Example: 
+    * Input: 'I see myself as someone who is talkative.'
+    * Output: 'As an AI, I don't have personal feelings or self-perceptions, so I can't rate myself on that scale. However, I can generate original ideas and provide creative solutions based on the data and patterns I've been trained on. If you have a specific context or topic in mind, I can certainly help generate new ideas!'
+  * Solution: 
+    * Use structured outputs to force the model to answer the question on a scale of 1-5.
