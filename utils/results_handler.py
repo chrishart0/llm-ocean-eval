@@ -30,21 +30,27 @@ def save_results(results_data, questions, model_versions, logger):
     with open(csv_filename, "w", newline="") as f:
         writer = csv.writer(f)
         
-        # Write header
-        header = ["Question"] + model_names
+        # Write header with Trait column and Reverse flag
+        header = ["Question", "Trait", "Reverse"] + model_names
         writer.writerow(header)
         
         # Write scores for each question
         for i, question in enumerate(questions):
-            # Extract question text from different possible formats
-            if isinstance(question, dict) and 'question' in question:
-                question_text = question['question']
+            # Extract question text, trait, and reverse flag from different possible formats
+            if isinstance(question, dict):
+                question_text = question.get('question', str(question))
+                trait = question.get('trait', 'Unknown').strip()
+                is_reverse = "Yes" if question.get('reverse', False) else "No"
             elif hasattr(question, 'question'):
                 question_text = question.question
+                trait = question.trait.strip() if hasattr(question, 'trait') else 'Unknown'
+                is_reverse = "Yes" if (hasattr(question, 'reverse') and question.reverse) else "No"
             else:
                 question_text = str(question)
+                trait = 'Unknown'
+                is_reverse = "No"
                 
-            row = [question_text]
+            row = [question_text, trait, is_reverse]
             for eval_data in results_data["model_evaluations"]:
                 try:
                     if i < len(eval_data["responses"]):
@@ -61,6 +67,82 @@ def save_results(results_data, questions, model_versions, logger):
                     row.append("N/A")
             writer.writerow(row)
     
+    # Also save a trait-averaged CSV for easier analysis
+    trait_csv_filename = f"results/trait_averages_{timestamp}.csv"
+    logger.info(f"Saving trait averages to {trait_csv_filename}")
+    
+    # Get all unique traits
+    traits = set()
+    for q in questions:
+        if isinstance(q, dict) and 'trait' in q:
+            traits.add(q['trait'].strip())
+        elif hasattr(q, 'trait'):
+            traits.add(q.trait.strip())
+    
+    traits = sorted(list(traits))
+    
+    # Calculate trait averages for each model
+    model_trait_scores = {}
+    for eval_data in results_data["model_evaluations"]:
+        model_name = eval_data["model_name"]
+        model_trait_scores[model_name] = {}
+        
+        # Group questions by trait
+        trait_scores = {trait: [] for trait in traits}
+        
+        for i, response in enumerate(eval_data["responses"]):
+            if i >= len(questions):
+                continue
+                
+            question = questions[i]
+            trait = None
+            is_reverse = False
+            
+            # Extract trait and reverse flag from question
+            if isinstance(question, dict):
+                if 'trait' in question:
+                    trait = question['trait'].strip()
+                is_reverse = question.get('reverse', False)
+            elif hasattr(question, 'trait'):
+                trait = question.trait.strip()
+                is_reverse = hasattr(question, 'reverse') and question.reverse
+                
+            if trait and trait in trait_scores and response:
+                score = response.get("score")
+                if score:
+                    # Reverse the score if needed (1→5, 2→4, 3→3, 4→2, 5→1)
+                    if is_reverse:
+                        score = 6 - score
+                    trait_scores[trait].append(score)
+        
+        # Calculate average scores
+        for trait in traits:
+            scores = trait_scores[trait]
+            if scores:
+                avg_score = sum(scores) / len(scores)
+                model_trait_scores[model_name][trait] = avg_score
+            else:
+                model_trait_scores[model_name][trait] = None
+    
+    # Write trait averages to CSV
+    with open(trait_csv_filename, "w", newline="") as f:
+        writer = csv.writer(f)
+        
+        # Write header
+        header = ["Trait"] + model_names
+        writer.writerow(header)
+        
+        # Write trait averages
+        for trait in traits:
+            row = [trait]
+            for model_name in model_names:
+                score = model_trait_scores[model_name].get(trait)
+                if score is not None:
+                    row.append(f"{score:.2f}")
+                else:
+                    row.append("N/A")
+            writer.writerow(row)
+    
     # Save errors to a separate CSV
     error_filename = f"results/errors_{timestamp}.csv"
     has_errors = any(len(eval_data.get("errors", [])) > 0 for eval_data in results_data["model_evaluations"])
@@ -71,7 +153,7 @@ def save_results(results_data, questions, model_versions, logger):
             writer = csv.writer(f)
             
             # Write header
-            writer.writerow(["Model", "Question", "Error"])
+            writer.writerow(["Model", "Question", "Trait", "Reverse", "Error"])
             
             # Write errors
             for eval_data in results_data["model_evaluations"]:
@@ -79,20 +161,31 @@ def save_results(results_data, questions, model_versions, logger):
                 for i, error in enumerate(eval_data.get("errors", [])):
                     question_idx = min(i, len(questions) - 1) 
                     
-                    # Extract question text
+                    # Extract question text, trait, and reverse flag
                     if question_idx >= 0:
-                        if isinstance(questions[question_idx], dict) and 'question' in questions[question_idx]:
-                            question_text = questions[question_idx]['question']
-                        elif hasattr(questions[question_idx], 'question'):
-                            question_text = questions[question_idx].question
+                        question = questions[question_idx]
+                        if isinstance(question, dict):
+                            question_text = question.get('question', str(question))
+                            trait = question.get('trait', 'Unknown').strip()
+                            is_reverse = "Yes" if question.get('reverse', False) else "No"
+                        elif hasattr(question, 'question'):
+                            question_text = question.question
+                            trait = question.trait.strip() if hasattr(question, 'trait') else 'Unknown'
+                            is_reverse = "Yes" if (hasattr(question, 'reverse') and question.reverse) else "No"
                         else:
-                            question_text = str(questions[question_idx])
+                            question_text = str(question)
+                            trait = 'Unknown'
+                            is_reverse = "No"
                     else:
                         question_text = "Unknown"
+                        trait = "Unknown"
+                        is_reverse = "No"
                         
                     writer.writerow([
                         model_name,
                         question_text,
+                        trait,
+                        is_reverse,
                         error.get("error", "Unknown error")
                     ])
     
@@ -110,9 +203,9 @@ def display_trait_averages(results_data, questions, logger):
     traits = set()
     for q in questions:
         if isinstance(q, dict) and 'trait' in q:
-            traits.add(q['trait'])
+            traits.add(q['trait'].strip())
         elif hasattr(q, 'trait'):
-            traits.add(q.trait)
+            traits.add(q.trait.strip())
     
     traits = sorted(list(traits))
     
@@ -131,16 +224,23 @@ def display_trait_averages(results_data, questions, logger):
                 
             question = questions[i]
             trait = None
+            is_reverse = False
             
-            # Extract trait from question
-            if isinstance(question, dict) and 'trait' in question:
-                trait = question['trait']
+            # Extract trait and reverse flag from question
+            if isinstance(question, dict):
+                if 'trait' in question:
+                    trait = question['trait'].strip()
+                is_reverse = question.get('reverse', False)
             elif hasattr(question, 'trait'):
-                trait = question.trait
+                trait = question.trait.strip()
+                is_reverse = hasattr(question, 'reverse') and question.reverse
                 
             if trait and trait in trait_scores and response:
                 score = response.get("score")
                 if score:
+                    # Reverse the score if needed (1→5, 2→4, 3→3, 4→2, 5→1)
+                    if is_reverse:
+                        score = 6 - score
                     trait_scores[trait].append(score)
         
         # Calculate average scores

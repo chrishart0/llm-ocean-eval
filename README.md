@@ -33,7 +33,7 @@ python eval.py
 
 Run a single evaluation:
 ```bash
-python eval.py --model "gpt-4o-mini"
+python eval.py --model openai:gpt-4o-mini
 ```
 
 Setup precommit:
@@ -46,6 +46,7 @@ pre-commit install
 - [ ] Better readme
 - [ ] Add an Ollama model
 - [ ] Add configs for temperature
+- [ ] Add eval and dataset to huggingface
 
 
 ## Research Notes
