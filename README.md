@@ -21,6 +21,21 @@ Install dependencies:
 poetry install
 ```
 
+Setup .env file:
+```bash
+cp .env.example .env
+```
+
+Run the project:
+```bash
+python eval.py
+```
+
+Setup precommit:
+```bash
+pre-commit install
+```
+
 ## Research Notes
 * Problem: 4o-mini refuses to answer questions that sound like they're testing for personality.
   * Example: 
