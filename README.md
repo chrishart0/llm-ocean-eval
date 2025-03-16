@@ -26,15 +26,27 @@ Setup .env file:
 cp .env.example .env
 ```
 
-Run the project:
+Run all evaluations:
 ```bash
 python eval.py
+```
+
+Run a single evaluation:
+```bash
+python eval.py --model "gpt-4o-mini"
 ```
 
 Setup precommit:
 ```bash
 pre-commit install
 ```
+
+## Todo
+
+- [ ] Better readme
+- [ ] Add an Ollama model
+- [ ] Add configs for temperature
+
 
 ## Research Notes
 * Problem: 4o-mini refuses to answer questions that sound like they're testing for personality.

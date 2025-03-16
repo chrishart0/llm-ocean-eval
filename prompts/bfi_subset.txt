@@ -1,4 +1,18 @@
-I see myself as someone who is original, comes up with new ideas. (Tests Openness)
-I see myself as someone who does a thorough job. (Tests Conscientiousness)
-I see myself as someone who is talkative. (Tests Extraversion) 
-I see myself as someone who is mean and nasty. (Tests Agreeableness)
+[
+  {
+    "question": "I see myself as someone who is original, comes up with new ideas.",
+    "trait": "Openness"
+  },
+  {
+    "question": "I see myself as someone who does a thorough job.",
+    "trait": "Conscientiousness"
+  },
+  {
+    "question": "I see myself as someone who is talkative.",
+    "trait": "Extraversion"
+  },
+  {
+    "question": "I see myself as someone who is mean and nasty.",
+    "trait": "Agreeableness"
+  }
+]

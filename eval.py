@@ -8,6 +8,7 @@ from pathlib import Path
 from langchain_core.prompts import ChatPromptTemplate
 import argparse
 import yaml
+import json
 
 # Import utils
 from utils.logging_config import setup_logger
@@ -23,12 +24,71 @@ def load_bfi_questions():
     logger.info(f"Loading BFI questions from {prompts_path}")
     try:
         with open(prompts_path, "r") as f:
-            questions = [line.strip() for line in f if line.strip()]
-        logger.info(f"Loaded {len(questions)} questions")
-        return questions
+            bfi_questions = json.loads(f.read())
+        logger.info(f"Loaded {len(bfi_questions)} questions")
+        return bfi_questions
     except Exception as e:
         logger.error(f"Error loading questions: {str(e)}")
         raise
+
+def analyze_response(response, question):
+    """Extract the score from a response."""
+    if response and hasattr(response, 'score'):
+        return response.score
+    return None
+
+def display_results_summary(results):
+    """Display a summary of the evaluation results with average scores by trait."""
+    logger = logging.getLogger("big_five_eval")
+    logger.info("\n===== EVALUATION RESULTS SUMMARY =====")
+    
+    # Get all unique traits from questions
+    traits = set()
+    for q in results.questions:
+        if isinstance(q, dict) and 'trait' in q:
+            traits.add(q['trait'])
+        elif hasattr(q, 'trait'):
+            traits.add(q.trait)
+    
+    traits = sorted(list(traits))
+    
+    # Calculate average scores by trait for each model
+    for model_eval in results.model_evaluations:
+        model_name = model_eval.model_name
+        logger.info(f"\nModel: {model_name}")
+        
+        # Group questions by trait
+        trait_scores = {trait: [] for trait in traits}
+        
+        for i, response in enumerate(model_eval.responses):
+            if i >= len(results.questions):
+                continue
+                
+            question = results.questions[i]
+            trait = None
+            
+            # Extract trait from question
+            if isinstance(question, dict) and 'trait' in question:
+                trait = question['trait']
+            elif hasattr(question, 'trait'):
+                trait = question.trait
+                
+            if trait and trait in trait_scores and response:
+                score = analyze_response(response, question)
+                if score:
+                    trait_scores[trait].append(score)
+        
+        # Calculate and display average scores
+        logger.info("Trait Averages:")
+        for trait in traits:
+            scores = trait_scores[trait]
+            if scores:
+                avg_score = sum(scores) / len(scores)
+                logger.info(f"  {trait}: {avg_score:.2f}")
+            else:
+                logger.info(f"  {trait}: No valid responses")
+    
+    logger.info("\n=====================================")
 
 def run_evaluation(selected_model=None, batch_file=None):
     """Run the evaluation on different LLM models."""
@@ -101,7 +161,7 @@ def run_evaluation(selected_model=None, batch_file=None):
         errors = []
         
         for i, question in enumerate(questions):
-            question_text = question.split(" (Tests")[0] if " (Tests" in question else question
+            question_text = question["question"]
             logger.info(f"Sending question to {model_name}: '{question_text}'")
             
             try:
@@ -171,7 +231,27 @@ def run_evaluation(selected_model=None, batch_file=None):
     # Save results using the handler
     save_results(results.model_dump(mode='json'), questions, model_versions, logger)
     
+    # Display summary of results
+    display_results_summary(results)
+    
     logger.info("Evaluation completed successfully")
+    return results
+
+def evaluate_bfi_responses(responses, questions):
+    results = {}
+    for i, question in enumerate(questions):
+        trait = question["trait"]
+        if trait not in results:
+            results[trait] = []
+        
+        # Process the response for this question
+        response_score = analyze_response(responses[i], question["question"])
+        results[trait].append(response_score)
+    
+    # Calculate average scores for each trait
+    for trait in results:
+        results[trait] = sum(results[trait]) / len(results[trait])
+    
     return results
 
 if __name__ == "__main__":

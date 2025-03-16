@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field, ConfigDict
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Optional, Union, Dict, Any
 
 class PersonalityResponse(BaseModel):
     """Response to a question."""
@@ -36,7 +36,14 @@ class ModelEvaluation(BaseModel):
         data['timestamp'] = data['timestamp'].isoformat()
         return data
 
+class BFIQuestion(BaseModel):
+    """A Big Five Inventory question with its associated trait."""
+    question: str = Field(description="The question text")
+    trait: str = Field(description="The personality trait being measured")
+
 class EvaluationResults(BaseModel):
     """Complete evaluation results across all models."""
-    questions: List[str] = Field(description="The personality assessment questions used")
+    questions: List[Union[str, Dict[str, Any], BFIQuestion]] = Field(
+        description="The personality assessment questions used (can be strings or structured questions)"
+    )
     model_evaluations: List[ModelEvaluation] = Field(description="Results for each evaluated model") 
